@@ -1,0 +1,54 @@
+---
+all:
+  vars:
+    nextcloud_url: "https://LINKTOYOURNEXTCLOUDURL/remote.php/webdav/ansible-k3s-kubeconfigs" #requires kubeconfigs directory to be made in nextcloud, and the user to have write access to it
+    nextcloud_user: "ANSIBLE_NEXTCLOUD_USER"
+    nextcloud_password: "ANSIBLE_NEXTCLOUD_PASSWORD" # USE ANSIBLE VAULT TO ENCRYPT THIS
+    kubeconfig_file : "k3s_{{ ansible_date_time.iso8601_basic }}.yaml" #This will be the name of the kubeconfig file, it will be uploaded to the nextcloud server
+
+k3s_cluster:
+  children:
+    server: # These will be the master/control plane nodes
+      hosts:
+        192.168.0.201:
+        192.168.0.198:
+        192.168.0.192:
+    agent: # These will be the worker nodes
+      hosts:
+
+  vars:
+    # Required Vars
+    ansible_port: 22
+    ansible_user: YOUR_ANSIBLE_USER # 
+    k3s_version: v1.26.9+k3s1
+    api_endpoint: "{{ hostvars[groups['server'][0]]['ansible_host'] | default(groups['server'][0]) }}" # This will be the IP of the first server in the server group
+    extra_server_args: ""
+    extra_agent_args: ""
+    token: "YOUR_K3S_TOKEN" # This is the token that will be used by the servers and agents to join the cluster
+    ansible_ssh_common_args: "-o StrictHostKeyChecking=no" # This can also be set in the ansible.cfg file
+
+    ## Optional Vars for Static IP
+    # Static IP configuration (optional)
+    # static_ip: false # Set to true to enable static IP configuration
+    # static_ip_network: 192.168.0.0
+    # static_ip_subnet: 23
+    # static_ip_gateway: 192.168.1.1
+    # static_ip_dns1: 192.168.1.2
+    # static_ip_dns2: 192.168.1.3
+
+    ## Optional vars for k3s
+    # api_port: 6443
+    k3s_server_location: /var/lib/rancher/k3s
+    systemd_dir: /etc/systemd/system
+    ansible_become_user: YOUR_BECOME_USER
+
+    # extra_service_envs: [ 'ENV_VAR1=VALUE1', 'ENV_VAR2=VALUE2' ]
+    # Manifests or Airgap should be either full paths or relative to the playbook directory.
+    # List of locally available manifests to apply to the cluster, useful for PVCs or Traefik modifications.
+    # extra_manifests: [ '/path/to/manifest1.yaml', '/path/to/manifest2.yaml' ]
+    # airgap_dir: ~/k3s-airgap
+    # user_kubectl: true, by default kubectl is symlinked and configured for use by ansible_user. Set to false to only kubectl via root user.
+    # server_config_yaml:  |
+      # This is now an inner yaml file. Maintain the indentation.
+      # YAML here will be placed as the content of /etc/rancher/k3s/config.yaml
+      # See https://docs.k3s.io/installation/configuration#configuration-file
